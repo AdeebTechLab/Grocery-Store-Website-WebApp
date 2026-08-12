@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>From The Groco Journal — Fresh Ideas for a Better Life | Groco</title>
+  <meta name="description" content="Explore healthy recipes, fresh-food guides, smart grocery tips, and organic living ideas curated by Groco experts.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Sacramento&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/journal.css">
+</head>
+<body class="journal-page-body">
+
+  <!-- Header / Navigation Bar -->
+  <header class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo" aria-label="Groco Homepage">
+        <span class="logo-icon">🌿</span>
+        <span class="logo-text">groco</span>
+      </a>
+
+      <nav class="nav-menu" id="nav-menu">
+        <a href="index.html#home" class="nav-link">Home</a>
+        <a href="index.html#features" class="nav-link">Features</a>
+        <a href="products.html" class="nav-link">Products</a>
+        <a href="index.html#categories" class="nav-link">Categories</a>
+        <a href="index.html#reviews" class="nav-link">Review</a>
+        <a href="journal.html" class="nav-link active">Blogs</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="products.html" class="search-btn-icon" aria-label="Search Catalog">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </a>
+
+        <div class="cart-wrapper" id="cart-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          <span class="cart-badge" id="cart-badge">0</span>
+        </div>
+
+        <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle Mobile Menu">
+          <span class="bar"></span>
+          <span class="bar"></span>
+          <span class="bar"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Journal Page Hero Header -->
+  <section class="journal-hero-banner">
+    <div class="journal-hero-container">
+      
+      <!-- Breadcrumb -->
+      <nav class="journal-breadcrumb" aria-label="Breadcrumb">
+        <a href="index.html">Home</a>
+        <span class="bc-sep">/</span>
+        <span class="bc-curr">Journal</span>
+      </nav>
+
+      <div class="journal-pill">
+        <span class="pill-icon">🌱</span>
+        <span class="pill-text">FROM THE GROCO JOURNAL</span>
+      </div>
+
+      <h1 class="journal-hero-title">
+        Fresh Ideas for a Better Life
+      </h1>
+
+      <p class="journal-hero-subtitle">
+        Healthy recipes, grocery intelligence, fresh-food guides and modern lifestyle inspiration curated by Groco experts.
+      </p>
+
+      <!-- Search & Filter Controls Bar -->
+      <div class="journal-controls-bar">
+        
+        <!-- Filter Tabs -->
+        <div class="journal-filter-pills" id="journal-filter-pills">
+          <button class="j-pill active" data-filter="all">All</button>
+          <button class="j-pill" data-filter="Health & Nutrition">Health & Nutrition</button>
+          <button class="j-pill" data-filter="Organic Living">Organic Living</button>
+          <button class="j-pill" data-filter="Smart Shopping">Smart Shopping</button>
+          <button class="j-pill" data-filter="Quick Recipes">Quick Recipes</button>
+          <button class="j-pill" data-filter="Lifestyle">Lifestyle</button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="journal-search-wrap">
+          <svg class="j-search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="journal-search-input" placeholder="Search the Groco Journal..." aria-label="Search Journal Articles">
+          <button id="j-clear-btn" class="j-clear-btn" aria-label="Clear Search">✕</button>
+        </div>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Journal Main Content Container -->
+  <main class="journal-main-section">
+    <div class="journal-main-container">
+
+      <!-- Featured Story Hero Card -->
+      <div class="journal-featured-hero" id="journal-featured-hero">
+        <!-- Rendered dynamically via journal.js -->
+      </div>
+
+      <!-- Secondary Editorial Rows Section -->
+      <div class="secondary-editorial-section" id="secondary-editorial-rows">
+        <!-- Rendered dynamically via journal.js -->
+      </div>
+
+      <!-- Article Stories Grid Section -->
+      <div class="journal-stories-header">
+        <h2 class="stories-section-title">More Editorial Stories</h2>
+        <span class="stories-count-badge" id="stories-count-badge">Showing 8 articles</span>
+      </div>
+
+      <div class="journal-stories-grid" id="journal-stories-grid">
+        <!-- Rendered dynamically via journal.js -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Upgraded Premium Deep Navy Groco Footer -->
+  <footer class="groco-footer" id="groco-footer">
+    <div class="groco-footer-container">
+      
+      <!-- Main Footer Columns Grid -->
+      <div class="groco-footer-grid">
+        
+        <!-- COLUMN 1: BRAND -->
+        <div class="groco-footer-col footer-brand-col footer-anim" data-anim-delay="0">
+          <a href="index.html" class="groco-footer-logo" aria-label="Groco Homepage">
+            <span class="logo-leaf">🌿</span>
+            <span class="logo-name">groco</span>
+          </a>
+          <p class="groco-brand-statement">
+            “Fresh groceries, thoughtfully selected and delivered with care.”
+          </p>
+          
+          <!-- Social Media Buttons -->
+          <div class="groco-social-container">
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="social-btn instagram-btn" aria-label="Instagram">
+              <svg class="social-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+              </svg>
+              <span class="social-tooltip">Instagram</span>
+            </a>
+
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="social-btn facebook-btn" aria-label="Facebook">
+              <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+              </svg>
+              <span class="social-tooltip">Facebook</span>
+            </a>
+
+            <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" class="social-btn tiktok-btn" aria-label="TikTok">
+              <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5v3a8 8 0 0 1-5-1.8A7 7 0 0 1 9 12z"></path>
+              </svg>
+              <span class="social-tooltip">TikTok</span>
+            </a>
+
+            <a href="https://wa.me/15551234567" target="_blank" rel="noopener noreferrer" class="social-btn whatsapp-btn" id="groco-whatsapp-link" aria-label="WhatsApp">
+              <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414-.074-.124-.272-.198-.57-.347z"/>
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 2.159.683 4.16 1.848 5.804L2.5 21.5l3.818-1.326A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18c-1.756 0-3.391-.475-4.802-1.304l-.344-.202-2.584.897.909-2.508-.223-.357A7.954 7.954 0 0 1 4 12c0-4.411 3.589-8 8-8s8 3.589 8 8-3.589 8-8 8z"/>
+              </svg>
+              <span class="social-tooltip">Chat with us</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- COLUMN 2: SHOP -->
+        <div class="groco-footer-col footer-anim" data-anim-delay="100">
+          <h4 class="groco-footer-heading">SHOP</h4>
+          <ul class="groco-footer-links">
+            <li><a href="products.html">All Products</a></li>
+            <li><a href="products.html?category=fruits">Fruits</a></li>
+            <li><a href="products.html?category=vegetables">Vegetables</a></li>
+            <li><a href="products.html?category=dairy">Dairy & Eggs</a></li>
+            <li><a href="products.html?category=bakery">Bakery & Bread</a></li>
+            <li><a href="products.html?category=beverages">Beverages</a></li>
+          </ul>
+        </div>
+
+        <!-- COLUMN 3: COMPANY & HELP -->
+        <div class="groco-footer-col groco-footer-split-col footer-anim" data-anim-delay="200">
+          <div class="groco-sub-col">
+            <h4 class="groco-footer-heading">COMPANY</h4>
+            <ul class="groco-footer-links">
+              <li><a href="index.html#about">About Groco</a></li>
+              <li><a href="index.html#reviews">Reviews</a></li>
+              <li><a href="journal.html">Journal</a></li>
+              <li><a href="index.html#about">Contact</a></li>
+            </ul>
+          </div>
+
+          <div class="groco-sub-col">
+            <h4 class="groco-footer-heading">HELP</h4>
+            <ul class="groco-footer-links">
+              <li><a href="#">Delivery</a></li>
+              <li><a href="#">Support</a></li>
+              <li><a href="#">FAQs</a></li>
+              <li><a href="#">Terms</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- COLUMN 4: STAY FRESH WITH US (NEWSLETTER) -->
+        <div class="groco-footer-col footer-anim" data-anim-delay="300">
+          <h4 class="groco-footer-heading">Stay Fresh With Us</h4>
+          <p class="groco-newsletter-desc">
+            Subscribe to get organic updates, seasonal offers and fresh news straight to your inbox.
+          </p>
+          
+          <form class="groco-newsletter-form" id="groco-footer-newsletter-form" action="#" method="POST" novalidate>
+            <div class="groco-newsletter-field-group">
+              <input 
+                type="email" 
+                class="groco-newsletter-input" 
+                id="groco-newsletter-email" 
+                placeholder="Your email address" 
+                required 
+                aria-label="Your email address"
+              />
+              <button type="submit" class="groco-newsletter-btn" aria-label="Subscribe to newsletter">
+                <span>Subscribe</span>
+                <svg class="groco-btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+            <div class="groco-newsletter-status" id="groco-newsletter-status"></div>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- BOTTOM FOOTER -->
+      <div class="groco-footer-bottom footer-anim" data-anim-delay="400">
+        <div class="groco-footer-copyright">
+          © 2026 Groco. Freshness Delivered With Care.
+        </div>
+        <div class="groco-footer-legal-links">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <script src="js/articles.js"></script>
+  <script src="js/products-core.js"></script>
+  <script src="js/journal.js"></script>
+</body>
+</html>
