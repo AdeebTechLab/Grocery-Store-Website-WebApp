@@ -4,6 +4,26 @@
  */
 
 // --------------------------------------------------------------------------
+// 0. HTML ESCAPING HELPER
+// --------------------------------------------------------------------------
+// Product (and article) fields like name/description/badge are editable
+// through the admin panel and are rendered via innerHTML template strings
+// throughout the site. Without escaping, a value like `<img src=x
+// onerror=alert(1)>` saved as a product name would execute as script for
+// every visitor. Always pass untrusted text through this before it goes
+// into an innerHTML template — including inside HTML attributes (it also
+// escapes quotes, so it's safe to interpolate into src="${...}" etc).
+function escapeHTML(value) {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// --------------------------------------------------------------------------
 // 1. LOCALSTORAGE CART & WISHLIST MANAGERS
 // --------------------------------------------------------------------------
 const GrocoStore = {
@@ -40,7 +60,7 @@ const GrocoStore = {
       this.updateCartBadges();
     }
 
-    const name = product ? product.name : 'Product';
+    const name = escapeHTML(product ? product.name : 'Product');
     GrocoToast.show(`Fresh <strong>${name}</strong> added to cart! 🛍️`);
   },
 
@@ -106,6 +126,35 @@ const GrocoStore = {
     }
   },
 
+  removeFromCart(productId) {
+    let cart = this.getCart();
+    cart = cart.filter(item => item.id !== productId);
+    localStorage.setItem('groco_cart', JSON.stringify(cart));
+    this.updateCartBadges();
+  },
+
+  setQuantity(productId, quantity) {
+    const cart = this.getCart();
+    const item = cart.find(i => i.id === productId);
+    if (!item) return;
+    if (quantity <= 0) {
+      this.removeFromCart(productId);
+      return;
+    }
+    item.quantity = quantity;
+    localStorage.setItem('groco_cart', JSON.stringify(cart));
+    this.updateCartBadges();
+  },
+
+  getCartTotal() {
+    const cart = this.getCart();
+    return cart.reduce((total, item) => {
+      const product = typeof getProductById === 'function' ? getProductById(item.id) : null;
+      const price = product ? product.price : 0;
+      return total + price * (item.quantity || 1);
+    }, 0);
+  },
+
   toggleWishlist(productId) {
     let wishlist = this.getWishlist();
     const index = wishlist.indexOf(productId);
@@ -132,7 +181,7 @@ const GrocoStore = {
     });
 
     const product = typeof getProductById === 'function' ? getProductById(productId) : null;
-    const name = product ? product.name : 'Product';
+    const name = escapeHTML(product ? product.name : 'Product');
     if (added) {
       GrocoToast.show(`Saved <strong>${name}</strong> to your wishlist! ❤️`);
     } else {
@@ -218,14 +267,22 @@ const QuickViewModal = {
     const isWishlisted = GrocoStore.getWishlist().includes(product.id);
     const content = document.getElementById('modal-content');
 
+    const name = escapeHTML(product.name);
+    const badge = escapeHTML(product.badge);
+    const badgeType = escapeHTML(product.badgeType);
+    const image = escapeHTML(product.image);
+    const category = escapeHTML(product.category);
+    const unit = escapeHTML(product.unit);
+    const description = escapeHTML(product.description);
+
     content.innerHTML = `
       <div class="modal-img-col">
-        ${product.badge ? `<span class="product-badge badge-${product.badgeType}">${product.badge}</span>` : ''}
-        <img src="${product.image}" alt="${product.name}" class="modal-img" id="modal-target-img">
+        ${product.badge ? `<span class="product-badge badge-${badgeType}">${badge}</span>` : ''}
+        <img src="${image}" alt="${name}" class="modal-img" id="modal-target-img">
       </div>
       <div class="modal-details-col">
-        <span class="modal-cat">${product.category}</span>
-        <h2 class="modal-title">${product.name}</h2>
+        <span class="modal-cat">${category}</span>
+        <h2 class="modal-title">${name}</h2>
         
         <div class="modal-rating">
           <div class="stars-gold">★★★★★</div>
@@ -236,10 +293,10 @@ const QuickViewModal = {
         <div class="modal-price-box">
           <span class="modal-curr-price">$${product.price.toFixed(2)}</span>
           ${product.oldPrice ? `<span class="modal-old-price">$${product.oldPrice.toFixed(2)}</span>` : ''}
-          <span class="modal-unit">/ ${product.unit}</span>
+          <span class="modal-unit">/ ${unit}</span>
         </div>
 
-        <p class="modal-desc">${product.description}</p>
+        <p class="modal-desc">${description}</p>
 
         <div class="modal-actions-row">
           <div class="qty-selector">
@@ -321,6 +378,149 @@ const QuickViewModal = {
     }
   }
 };
+
+// --------------------------------------------------------------------------
+// 4. CART DRAWER (slide-in panel showing current cart contents)
+// --------------------------------------------------------------------------
+const GrocoCartDrawer = {
+  overlay: null,
+
+  init() {
+    if (this.overlay) return;
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'groco-cart-drawer-overlay';
+    this.overlay.innerHTML = `
+      <aside class="groco-cart-drawer" role="dialog" aria-label="Shopping Cart">
+        <div class="groco-cart-drawer-header">
+          <h2>Your Cart</h2>
+          <button class="groco-cart-close-btn" aria-label="Close Cart">&times;</button>
+        </div>
+        <div class="groco-cart-drawer-body" id="groco-cart-drawer-body"></div>
+        <div class="groco-cart-drawer-footer" id="groco-cart-drawer-footer"></div>
+      </aside>
+    `;
+    document.body.appendChild(this.overlay);
+
+    this.overlay.addEventListener('click', (e) => {
+      if (e.target === this.overlay || e.target.classList.contains('groco-cart-close-btn')) {
+        this.close();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.overlay.classList.contains('open')) {
+        this.close();
+      }
+    });
+
+    // Delegated handlers for quantity / remove buttons inside the drawer
+    this.overlay.addEventListener('click', (e) => {
+      const minusBtn = e.target.closest('.groco-cart-qty-minus');
+      const plusBtn = e.target.closest('.groco-cart-qty-plus');
+      const removeBtn = e.target.closest('.groco-cart-remove-btn');
+      const checkoutBtn = e.target.closest('.groco-cart-checkout-btn');
+
+      if (minusBtn) {
+        const id = minusBtn.getAttribute('data-id');
+        const cart = GrocoStore.getCart();
+        const item = cart.find(i => i.id === id);
+        if (item) GrocoStore.setQuantity(id, (item.quantity || 1) - 1);
+        this.render();
+      } else if (plusBtn) {
+        const id = plusBtn.getAttribute('data-id');
+        const cart = GrocoStore.getCart();
+        const item = cart.find(i => i.id === id);
+        if (item) GrocoStore.setQuantity(id, (item.quantity || 1) + 1);
+        this.render();
+      } else if (removeBtn) {
+        const id = removeBtn.getAttribute('data-id');
+        GrocoStore.removeFromCart(id);
+        this.render();
+      } else if (checkoutBtn) {
+        GrocoToast.show('🛒 Checkout is not available in this demo store — no payment backend is connected.');
+      }
+    });
+  },
+
+  render() {
+    const body = document.getElementById('groco-cart-drawer-body');
+    const footer = document.getElementById('groco-cart-drawer-footer');
+    if (!body || !footer) return;
+
+    const cart = GrocoStore.getCart();
+
+    if (cart.length === 0) {
+      body.innerHTML = `
+        <div class="groco-cart-empty-state">
+          <p>Your cart is empty 🌿</p>
+          <p class="groco-cart-empty-sub">Browse our fresh picks and add something delicious!</p>
+        </div>
+      `;
+      footer.innerHTML = '';
+      return;
+    }
+
+    body.innerHTML = cart.map(item => {
+      const product = typeof getProductById === 'function' ? getProductById(item.id) : null;
+      if (!product) return '';
+      const qty = item.quantity || 1;
+      const lineTotal = (product.price * qty).toFixed(2);
+      const name = escapeHTML(product.name);
+      const image = escapeHTML(product.image);
+      const unit = escapeHTML(product.unit);
+      return `
+        <div class="groco-cart-line-item" data-id="${product.id}">
+          <img src="${image}" alt="${name}" class="groco-cart-item-img">
+          <div class="groco-cart-item-info">
+            <span class="groco-cart-item-name">${name}</span>
+            <span class="groco-cart-item-unit">${unit}</span>
+            <div class="groco-cart-qty-row">
+              <button class="groco-cart-qty-minus" data-id="${product.id}" aria-label="Decrease quantity">-</button>
+              <span class="groco-cart-qty-val">${qty}</span>
+              <button class="groco-cart-qty-plus" data-id="${product.id}" aria-label="Increase quantity">+</button>
+            </div>
+          </div>
+          <div class="groco-cart-item-price-col">
+            <span class="groco-cart-item-price">$${lineTotal}</span>
+            <button class="groco-cart-remove-btn" data-id="${product.id}" aria-label="Remove item">Remove</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    const total = GrocoStore.getCartTotal().toFixed(2);
+    footer.innerHTML = `
+      <div class="groco-cart-total-row">
+        <span>Subtotal</span>
+        <span class="groco-cart-total-val">$${total}</span>
+      </div>
+      <button class="btn btn-primary groco-cart-checkout-btn">Checkout</button>
+    `;
+  },
+
+  open() {
+    this.init();
+    this.render();
+    this.overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    if (this.overlay) {
+      this.overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+};
+
+// Wire up every "cart-btn" (button, anchor, or div wrapper) across all pages
+// to open the shared cart drawer instead of doing nothing / navigating to a dead anchor.
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('#cart-btn, .cart-btn');
+  if (!trigger) return;
+  e.preventDefault();
+  GrocoCartDrawer.open();
+});
 
 // Global Delegated Event Handler for Product Card Actions Across All Components
 document.addEventListener('click', (e) => {
@@ -410,14 +610,14 @@ function initGrocoFooter() {
       const email = newsletterEmail.value.trim();
       if (!email || !email.includes('@')) {
         if (newsletterStatus) {
-          newsletterStatus.style.color = '#FF6B6B';
+          newsletterStatus.classList.add('error');
           newsletterStatus.textContent = 'Please enter a valid email address.';
         }
         return;
       }
 
       if (newsletterStatus) {
-        newsletterStatus.style.color = '#2ECC71';
+        newsletterStatus.classList.remove('error');
         newsletterStatus.textContent = 'Thank you for subscribing! 🌱';
       }
       newsletterEmail.value = '';
@@ -429,6 +629,7 @@ function initGrocoFooter() {
       setTimeout(() => {
         if (newsletterStatus) {
           newsletterStatus.textContent = '';
+          newsletterStatus.classList.remove('error');
         }
       }, 4000);
     });

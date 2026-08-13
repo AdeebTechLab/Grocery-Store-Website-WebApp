@@ -1,0 +1,14 @@
+[
+  { "slug": "fruits", "title": "Fruits" },
+  { "slug": "vegetables", "title": "Vegetables" },
+  { "slug": "dairy", "title": "Dairy & Eggs" },
+  { "slug": "beverages", "title": "Beverages" },
+  { "slug": "bakery", "title": "Bakery & Bread" },
+  { "slug": "snacks", "title": "Snacks" },
+  { "slug": "staples", "title": "Staples & Grains" },
+  { "slug": "meat", "title": "Meat & Seafood" },
+  { "slug": "frozen", "title": "Frozen Foods" },
+  { "slug": "sauces", "title": "Sauces & Condiments" },
+  { "slug": "personal", "title": "Personal Care" },
+  { "slug": "home", "title": "Home Care" }
+]

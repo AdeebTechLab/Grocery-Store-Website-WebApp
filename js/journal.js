@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const secondaryRows = document.getElementById('secondary-editorial-rows');
   const storiesGrid = document.getElementById('journal-stories-grid');
   const storiesCountBadge = document.getElementById('stories-count-badge');
-  const newsletterForm = document.getElementById('newsletter-form');
 
   let activeFilter = 'all';
   let searchQuery = '';
@@ -73,22 +72,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const feat = articles[0];
     if (featuredHero) {
       featuredHero.style.display = 'block';
+      const featBadge = escapeHTML(feat.badge || 'FEATURED');
+      const featImage = escapeHTML(feat.image);
+      const featTitleText = escapeHTML(feat.title);
+      const featCategory = escapeHTML(feat.category);
+      const featDesc = escapeHTML(feat.shortDescription);
+      const featAuthor = escapeHTML(feat.author);
+      const featDate = escapeHTML(feat.date);
+      const featReadTime = escapeHTML(feat.readTime);
       featuredHero.innerHTML = `
         <div class="j-hero-card">
           <div class="j-hero-img-wrap">
-            <span class="j-badge">${feat.badge || 'FEATURED'}</span>
-            <img src="${feat.image}" alt="${feat.title}" class="j-hero-img" loading="lazy">
+            <span class="j-badge">${featBadge}</span>
+            <img src="${featImage}" alt="${featTitleText}" class="j-hero-img" loading="lazy">
           </div>
           <div class="j-hero-content">
-            <span class="j-category-tag">${feat.category}</span>
-            <h2 class="j-hero-title">${feat.title}</h2>
-            <p class="j-hero-desc">${feat.shortDescription}</p>
+            <span class="j-category-tag">${featCategory}</span>
+            <h2 class="j-hero-title">${featTitleText}</h2>
+            <p class="j-hero-desc">${featDesc}</p>
             
             <div class="j-hero-meta-row">
               <div class="j-meta-info">
-                <span class="j-author">By ${feat.author}</span> •
-                <span class="j-date">${feat.date}</span> •
-                <span class="j-read-time">${feat.readTime}</span>
+                <span class="j-author">By ${featAuthor}</span> •
+                <span class="j-date">${featDate}</span> •
+                <span class="j-read-time">${featReadTime}</span>
               </div>
               <a href="article.html?id=${feat.id}" class="j-read-btn">
                 <span>Read Article</span>
@@ -111,14 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
         secondaryRows.innerHTML = rowsArticles.map(art => `
           <div class="j-row-card">
             <div class="j-row-img-wrap">
-              <img src="${art.image}" alt="${art.title}" class="j-row-img" loading="lazy">
+              <img src="${escapeHTML(art.image)}" alt="${escapeHTML(art.title)}" class="j-row-img" loading="lazy">
             </div>
             <div class="j-row-content">
-              <span class="j-category-tag">${art.category}</span>
-              <h3 class="j-row-title">${art.title}</h3>
-              <p class="j-row-desc">${art.shortDescription}</p>
+              <span class="j-category-tag">${escapeHTML(art.category)}</span>
+              <h3 class="j-row-title">${escapeHTML(art.title)}</h3>
+              <p class="j-row-desc">${escapeHTML(art.shortDescription)}</p>
               <div class="j-row-footer">
-                <span class="j-card-meta">By ${art.author} • ${art.readTime} • ${art.date}</span>
+                <span class="j-card-meta">By ${escapeHTML(art.author)} • ${escapeHTML(art.readTime)} • ${escapeHTML(art.date)}</span>
                 <a href="article.html?id=${art.id}" class="j-card-read-link">
                   <span>Read Article</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -144,16 +151,16 @@ document.addEventListener('DOMContentLoaded', () => {
         storiesGrid.innerHTML = gridArticles.map(art => `
           <article class="j-story-card">
             <div class="j-card-img-wrap">
-              <span class="j-card-badge">${art.category}</span>
-              <img src="${art.image}" alt="${art.title}" class="j-card-img" loading="lazy">
+              <span class="j-card-badge">${escapeHTML(art.category)}</span>
+              <img src="${escapeHTML(art.image)}" alt="${escapeHTML(art.title)}" class="j-card-img" loading="lazy">
             </div>
             <div class="j-card-content">
-              <span class="j-card-category">${art.category}</span>
-              <h3 class="j-card-title">${art.title}</h3>
-              <p class="j-card-excerpt">${art.shortDescription}</p>
+              <span class="j-card-category">${escapeHTML(art.category)}</span>
+              <h3 class="j-card-title">${escapeHTML(art.title)}</h3>
+              <p class="j-card-excerpt">${escapeHTML(art.shortDescription)}</p>
               
               <div class="j-card-footer">
-                <span class="j-card-meta">${art.readTime} • ${art.date}</span>
+                <span class="j-card-meta">${escapeHTML(art.readTime)} • ${escapeHTML(art.date)}</span>
                 <a href="article.html?id=${art.id}" class="j-card-read-link">
                   <span>Read Article</span>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -194,21 +201,6 @@ document.addEventListener('DOMContentLoaded', () => {
       searchQuery = '';
       clearBtn.classList.remove('visible');
       renderJournalPage();
-    });
-  }
-
-  // Newsletter Form Listener
-  if (newsletterForm) {
-    newsletterForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const emailInput = document.getElementById('newsletter-email');
-      const email = emailInput ? emailInput.value : '';
-      if (typeof GrocoToast !== 'undefined') {
-        GrocoToast.show(`🌱 Thank you for subscribing with <strong>${email}</strong>!`);
-      } else {
-        alert(`🌱 Thank you for subscribing with ${email}!`);
-      }
-      if (emailInput) emailInput.value = '';
     });
   }
 

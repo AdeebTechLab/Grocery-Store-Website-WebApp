@@ -3,17 +3,20 @@
    Lightweight interactive logic for mobile menu toggle, active nav states & buttons.
    ========================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // Wait for the product catalog (loaded via /api/products, with a bundled
+  // fallback) before rendering anything below that reads GROCO_PRODUCTS,
+  // e.g. the featured product stage carousel.
+  if (window.GrocoProductsReady) {
+    await window.GrocoProductsReady;
+  }
+
   // Elements
   const mobileToggle = document.getElementById('mobile-toggle');
   const navMenu = document.getElementById('nav-menu');
   const navLinks = document.querySelectorAll('.nav-link');
-  const cartBtn = document.getElementById('cart-btn');
-  const cartBadge = document.querySelector('.cart-badge');
   const searchBtn = document.getElementById('search-btn');
   const userBtn = document.getElementById('user-btn');
-
-  let cartCount = 0;
 
   // Mobile Hamburger Menu Toggle
   if (mobileToggle && navMenu) {
@@ -23,21 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-
-
-  // Interactive Cart Counter Increment Animation
-  if (cartBtn && cartBadge) {
-    cartBtn.addEventListener('click', () => {
-      cartCount++;
-      cartBadge.textContent = cartCount;
-      
-      // Bump animation
-      cartBadge.style.transform = 'scale(1.4)';
-      setTimeout(() => {
-        cartBadge.style.transform = 'scale(1)';
-      }, 200);
-    });
-  }
+  // NOTE: The cart icon's badge count & click-to-open behavior are now handled
+  // globally by GrocoCartDrawer / GrocoStore in products-core.js, which reflects
+  // the *real* localStorage cart contents instead of a fake per-click counter.
 
   // Subtle Interactive Feedback on Search & User Buttons
   [searchBtn, userBtn].forEach(btn => {
@@ -79,19 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --------------------------------------------------------------------------
-  // PRODUCTS SHOWCASE INTERACTIVITY & CAROUSEL
-  // --------------------------------------------------------------------------
-  const catTabs = document.querySelectorAll('.cat-tab');
-  const productCards = document.querySelectorAll('.product-card');
-  const productTrack = document.getElementById('product-track');
-  const prodPrev = document.getElementById('prod-prev');
-  const prodNext = document.getElementById('prod-next');
-  const prodDots = document.querySelectorAll('#prod-dots .dot');
-
-  let currentSlide = 0;
-  const maxSlides = 3;
-  // --------------------------------------------------------------------------
   // --------------------------------------------------------------------------
   // HOMEPAGE EDITORIAL FLOATING PRODUCT STAGE SHOWCASE ENGINE
   // --------------------------------------------------------------------------
@@ -141,13 +119,13 @@ document.addEventListener('DOMContentLoaded', () => {
       if (stageProdReviews) stageProdReviews.textContent = `(${p.reviews || 120} reviews)`;
       if (stageProdUnit) stageProdUnit.textContent = p.unit || '1 kg / Pack';
       
-      const calcPrice = Math.round((p.price || 3.99) * 60);
-      if (stageProdPrice) stageProdPrice.textContent = `Rs. ${calcPrice} / ${p.unit ? p.unit.split(' ')[0] : 'kg'}`;
+      const calcPrice = (p.price || 3.99).toFixed(2);
+      if (stageProdPrice) stageProdPrice.textContent = `$${calcPrice} / ${p.unit ? p.unit.split(' ')[0] : 'kg'}`;
       
       if (p.oldPrice) {
-        const calcOld = Math.round(p.oldPrice * 60);
+        const calcOld = p.oldPrice.toFixed(2);
         if (stageProdOldPrice) {
-          stageProdOldPrice.textContent = `Rs. ${calcOld}`;
+          stageProdOldPrice.textContent = `$${calcOld}`;
           stageProdOldPrice.style.display = 'inline';
         }
         if (stageProdDiscount) {
@@ -195,10 +173,12 @@ document.addEventListener('DOMContentLoaded', () => {
       node.setAttribute('data-pos', posCount);
       node.setAttribute('data-idx', idx);
 
+      const satName = escapeHTML(prod.name);
+      const satImage = escapeHTML(prod.image);
       node.innerHTML = `
         <div class="sat-img-box">
-          <img src="${prod.image}" alt="${prod.name}" loading="lazy">
-          <span class="sat-tooltip">${prod.name}</span>
+          <img src="${satImage}" alt="${satName}" loading="lazy">
+          <span class="sat-tooltip">${satName}</span>
         </div>
       `;
 
@@ -300,20 +280,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!stageProducts.length) return;
       const activeProd = stageProducts[currentActiveIndex];
 
-      // Add to GrocoCart if engine available
-      if (typeof GrocoCart !== 'undefined' && typeof GrocoCart.addToCart === 'function') {
-        GrocoCart.addToCart(activeProd.id, 1, centerFeaturedImg);
-      } else {
-        // Fallback cart badge update
-        if (cartBtn && cartBadge) {
-          cartCount++;
-          cartBadge.textContent = cartCount;
-          cartBadge.style.transform = 'scale(1.4)';
-          setTimeout(() => cartBadge.style.transform = 'scale(1)', 200);
-        }
-        if (typeof GrocoToast !== 'undefined') {
-          GrocoToast.show(`Fresh <strong>${activeProd.name}</strong> added to cart! 🛍️`);
-        }
+      // Add to the real GrocoStore cart (persists to localStorage & updates all badges)
+      if (typeof GrocoStore !== 'undefined' && typeof GrocoStore.addToCart === 'function') {
+        GrocoStore.addToCart(activeProd.id, 1, centerFeaturedImg);
+      } else if (typeof GrocoToast !== 'undefined') {
+        // Extremely unlikely fallback if products-core.js failed to load
+        GrocoToast.show(`Fresh <strong>${activeProd.name}</strong> added to cart! 🛍️`);
       }
 
       // Button compression feedback animation
@@ -963,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const revealElements = document.querySelectorAll(
-      '.groco-reveal, .groco-reveal-up, .groco-reveal-left, .groco-reveal-right, .groco-reveal-scale, .groco-stagger, .groco-text-reveal, .bottom-stats-strip'
+      '.groco-reveal, .groco-reveal-up, .groco-reveal-left, .groco-reveal-right, .groco-reveal-scale, .groco-stagger, .groco-text-reveal, .bottom-stats-strip, .groco-card-odd, .groco-card-even'
     );
 
     if ('IntersectionObserver' in window) {

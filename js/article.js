@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const bookmarkBtn = document.getElementById('btn-bookmark-article');
   const bookmarkLabel = document.getElementById('bookmark-label');
   const progressBar = document.getElementById('reading-progress-bar');
-  const newsletterForm = document.getElementById('newsletter-form');
 
   if (typeof GROCO_JOURNAL_ARTICLES === 'undefined') return;
 
@@ -146,15 +145,15 @@ document.addEventListener('DOMContentLoaded', () => {
     relatedGrid.innerHTML = related.map(rel => `
       <article class="related-card">
         <div class="related-img-wrap">
-          <span class="related-badge">${rel.category}</span>
-          <img src="${rel.image}" alt="${rel.title}" class="related-img" loading="lazy">
+          <span class="related-badge">${escapeHTML(rel.category)}</span>
+          <img src="${escapeHTML(rel.image)}" alt="${escapeHTML(rel.title)}" class="related-img" loading="lazy">
         </div>
         <div class="related-content">
-          <h3 class="related-card-title">${rel.title}</h3>
-          <p class="related-excerpt">${rel.shortDescription}</p>
+          <h3 class="related-card-title">${escapeHTML(rel.title)}</h3>
+          <p class="related-excerpt">${escapeHTML(rel.shortDescription)}</p>
           
           <div class="related-footer">
-            <span class="related-meta">${rel.readTime} • ${rel.date}</span>
+            <span class="related-meta">${escapeHTML(rel.readTime)} • ${escapeHTML(rel.date)}</span>
             <a href="article.html?id=${rel.id}" class="related-read-link">
               <span>Read Article</span>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -168,18 +167,4 @@ document.addEventListener('DOMContentLoaded', () => {
     `).join('');
   }
 
-  // 10. Newsletter Form Listener
-  if (newsletterForm) {
-    newsletterForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const emailInput = document.getElementById('newsletter-email');
-      const email = emailInput ? emailInput.value : '';
-      if (typeof GrocoToast !== 'undefined') {
-        GrocoToast.show(`🌱 Thank you for subscribing with <strong>${email}</strong>!`);
-      } else {
-        alert(`🌱 Thank you for subscribing with ${email}!`);
-      }
-      if (emailInput) emailInput.value = '';
-    });
-  }
 });

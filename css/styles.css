@@ -4897,6 +4897,10 @@ body {
   font-weight: 600;
 }
 
+.groco-newsletter-status.error {
+  color: #e74c3c;
+}
+
 /* Bottom Footer Bar */
 .groco-footer-bottom {
   margin-top: 56px;
@@ -4982,6 +4986,7 @@ body {
     margin-top: 40px;
     padding-top: 24px;
   }
+}
 
 /* ==========================================================================
    GROCO GLOBAL SCROLL MOTION & ANIMATION SYSTEM

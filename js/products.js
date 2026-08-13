@@ -3,9 +3,30 @@
  * 2-Row Horizontal Scroll Carousel Viewport, Live Search Suggestions & Arrow Navigation
  */
 
+// Simple inline SVG placeholder shown when a product's image URL fails to
+// load (e.g. a dead hotlinked Unsplash link) so we never show the browser's
+// broken-image icon.
+const FALLBACK_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+    <rect width="400" height="300" fill="#f0f5ed"/>
+    <g fill="none" stroke="#a9c79c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="120" y="95" width="160" height="120" rx="10"/>
+      <circle cx="160" cy="130" r="12"/>
+      <path d="M120 190l45-45 30 30 25-25 40 40"/>
+    </g>
+    <text x="200" y="245" font-family="Arial, sans-serif" font-size="14" fill="#8fa982" text-anchor="middle">Image unavailable</text>
+  </svg>
+`);
+
 function createCatalogCardHTML(product) {
   const isWishlisted = GrocoStore.getWishlist().includes(product.id);
-  const badgeHTML = product.badge ? `<span class="catalog-badge badge-${product.badgeType}">${product.badge}</span>` : '';
+  const name = escapeHTML(product.name);
+  const badge = escapeHTML(product.badge);
+  const badgeType = escapeHTML(product.badgeType);
+  const image = escapeHTML(product.image);
+  const category = escapeHTML(product.category);
+  const unit = escapeHTML(product.unit);
+  const badgeHTML = product.badge ? `<span class="catalog-badge badge-${badgeType}">${badge}</span>` : '';
 
   return `
     <div class="catalog-card" data-id="${product.id}" data-category="${product.categorySlug}">
@@ -18,7 +39,7 @@ function createCatalogCardHTML(product) {
           </svg>
         </button>
 
-        <img src="${product.image}" alt="${product.name}" class="catalog-img" loading="lazy">
+        <img src="${image}" alt="${name}" class="catalog-img" loading="lazy" onerror="this.onerror=null;this.src='${FALLBACK_IMG}';this.classList.add('catalog-img-fallback');">
 
         <button class="catalog-quickview-btn quick-view-btn" data-id="${product.id}" aria-label="Quick View">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -30,8 +51,8 @@ function createCatalogCardHTML(product) {
       </div>
 
       <div class="catalog-info">
-        <span class="catalog-category-tag">${product.category}</span>
-        <h3 class="catalog-title">${product.name}</h3>
+        <span class="catalog-category-tag">${category}</span>
+        <h3 class="catalog-title">${name}</h3>
 
         <div class="catalog-rating-row">
           <div class="stars-gold">★★★★★</div>
@@ -44,7 +65,7 @@ function createCatalogCardHTML(product) {
             <span class="catalog-curr-price">$${product.price.toFixed(2)}</span>
             ${product.oldPrice ? `<span class="catalog-old-price">$${product.oldPrice.toFixed(2)}</span>` : ''}
           </div>
-          <span class="catalog-unit">${product.unit}</span>
+          <span class="catalog-unit">${unit}</span>
         </div>
 
         <button class="catalog-add-cart-btn add-to-cart-action-btn" data-id="${product.id}">
@@ -60,18 +81,23 @@ function createCatalogCardHTML(product) {
   `;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  const catalogViewport = document.getElementById('catalog-carousel-viewport');
+document.addEventListener('DOMContentLoaded', async () => {
+  // Wait for the product catalog (loaded via /api/products, with a bundled
+  // fallback) before doing the first filter/render pass.
+  if (window.GrocoProductsReady) {
+    await window.GrocoProductsReady;
+  }
+
   const catalogGrid = document.getElementById('catalog-products-grid');
   const searchInput = document.getElementById('catalog-search-input');
   const searchClearBtn = document.getElementById('search-clear-btn');
   const suggestionsPanel = document.getElementById('search-suggestions-panel');
   const sortSelect = document.getElementById('catalog-sort-select');
   const categoryPills = document.querySelectorAll('#catalog-category-pills .cat-tab');
+  const catPillsTrack = document.getElementById('catalog-category-pills');
+  const catPillsPrev = document.getElementById('cat-pills-prev');
+  const catPillsNext = document.getElementById('cat-pills-next');
   const countLabel = document.getElementById('catalog-count-label');
-  const prevBtn = document.getElementById('catalog-prev');
-  const nextBtn = document.getElementById('catalog-next');
-  const dotsContainer = document.getElementById('catalog-progress-dots');
 
   let currentCategory = 'all';
   let currentSearch = '';
@@ -115,7 +141,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Render Grid or Empty State
     if (result.length === 0) {
-      catalogGrid.style.gridAutoFlow = 'row';
       catalogGrid.innerHTML = `
         <div class="catalog-empty-state">
           <h3>No fresh picks found 🌿</h3>
@@ -132,77 +157,15 @@ document.addEventListener('DOMContentLoaded', () => {
           filterAndRenderCatalog();
         });
       }
-      updateProgressDots(0, 1);
       return;
     }
 
-    catalogGrid.style.gridAutoFlow = 'column';
     catalogGrid.style.opacity = '0';
 
     setTimeout(() => {
       catalogGrid.innerHTML = result.map(createCatalogCardHTML).join('');
       catalogGrid.style.opacity = '1';
-      if (catalogViewport) catalogViewport.scrollLeft = 0;
-      updateProgressTracker();
     }, 100);
-  }
-
-  // Carousel Controls & Progress Dots Tracker
-  function updateProgressTracker() {
-    if (!catalogViewport || !catalogGrid) return;
-    const scrollLeft = catalogViewport.scrollLeft;
-    const maxScroll = catalogViewport.scrollWidth - catalogViewport.clientWidth;
-    const totalPages = Math.max(1, Math.ceil(catalogGrid.children.length / 8));
-    const currentPage = Math.min(totalPages - 1, Math.floor((scrollLeft / (maxScroll || 1)) * totalPages));
-
-    updateProgressDots(currentPage, totalPages);
-  }
-
-  function updateProgressDots(activeIdx, totalPages) {
-    if (!dotsContainer) return;
-    dotsContainer.innerHTML = Array.from({ length: totalPages }, (_, i) => 
-      `<span class="progress-dot ${i === activeIdx ? 'active' : ''}" data-idx="${i}"></span>`
-    ).join('');
-
-    dotsContainer.querySelectorAll('.progress-dot').forEach(dot => {
-      dot.addEventListener('click', () => {
-        const idx = parseInt(dot.getAttribute('data-idx'));
-        if (catalogViewport) {
-          const scrollWidth = catalogViewport.scrollWidth - catalogViewport.clientWidth;
-          catalogViewport.scrollTo({
-            left: (idx / (totalPages - 1 || 1)) * scrollWidth,
-            behavior: 'smooth'
-          });
-        }
-      });
-    });
-  }
-
-  // Navigation Arrow Click Listeners
-  if (prevBtn && catalogViewport) {
-    prevBtn.addEventListener('click', () => {
-      catalogViewport.scrollBy({ left: -catalogViewport.clientWidth, behavior: 'smooth' });
-    });
-  }
-
-  if (nextBtn && catalogViewport) {
-    nextBtn.addEventListener('click', () => {
-      catalogViewport.scrollBy({ left: catalogViewport.clientWidth, behavior: 'smooth' });
-    });
-  }
-
-  // Mouse Wheel Listener: ONLY handle horizontal intent (Shift + wheel or horizontal deltaX)
-  // Normal vertical mouse wheel deltaY is UNTOUCHED so the browser page scrolls UP/DOWN naturally!
-  if (catalogViewport) {
-    catalogViewport.addEventListener('wheel', (e) => {
-      if (e.shiftKey || (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 0)) {
-        e.preventDefault();
-        catalogViewport.scrollLeft += (e.deltaX || e.deltaY);
-        updateProgressTracker();
-      }
-    }, { passive: false });
-
-    catalogViewport.addEventListener('scroll', updateProgressTracker, { passive: true });
   }
 
   // Search Input & Suggestions Event Listeners
@@ -282,5 +245,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Initial Catalog Render
+  // Category Pills Left/Right Scroll Arrows
+  function updateCatPillsArrows() {
+    if (!catPillsTrack || !catPillsPrev || !catPillsNext) return;
+    const maxScroll = catPillsTrack.scrollWidth - catPillsTrack.clientWidth;
+    catPillsPrev.disabled = catPillsTrack.scrollLeft <= 4;
+    catPillsNext.disabled = catPillsTrack.scrollLeft >= maxScroll - 4;
+  }
+
+  if (catPillsTrack && catPillsPrev && catPillsNext) {
+    catPillsPrev.addEventListener('click', () => {
+      catPillsTrack.scrollBy({ left: -220, behavior: 'smooth' });
+    });
+    catPillsNext.addEventListener('click', () => {
+      catPillsTrack.scrollBy({ left: 220, behavior: 'smooth' });
+    });
+    catPillsTrack.addEventListener('scroll', updateCatPillsArrows);
+    window.addEventListener('resize', updateCatPillsArrows);
+    updateCatPillsArrows();
+  }
+
+  window.addEventListener('resize', () => {
+    clearTimeout(window.__catalogResizeTimer);
+    window.__catalogResizeTimer = setTimeout(filterAndRenderCatalog, 200);
+  });
+
   filterAndRenderCatalog();
 });

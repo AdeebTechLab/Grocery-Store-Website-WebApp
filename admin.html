@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Product Admin — Groco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="auth-gate" class="auth-gate">Checking session…</div>
+
+  <div id="app" class="app hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo-badge">🌿</div>
+        <div>
+          <h1>Product Catalog Manager</h1>
+          <p class="signed-in-as">Signed in as <span id="username-label"></span></p>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="live-pill">Editing live catalog</span>
+        <span id="save-status" class="save-status"></span>
+        <button id="save-btn" class="btn btn-primary">Save Changes</button>
+        <button id="logout-btn" class="btn btn-ghost">Log Out</button>
+      </div>
+    </header>
+
+    <div id="banner" class="banner hidden"></div>
+
+    <main class="main">
+      <div class="toolbar">
+        <div class="search-control">
+          <input type="text" id="admin-search-input" class="search-input" placeholder="Search products by name…">
+        </div>
+        <p class="hint">Edit any field below, then click <strong>Save Changes</strong> to publish it to the live site.</p>
+      </div>
+
+      <nav class="jump-nav" id="jump-nav"></nav>
+
+      <div class="category-actions-row">
+        <button id="add-category-btn" class="btn btn-secondary btn-sm">+ Add Category</button>
+      </div>
+
+      <div id="categories-container"></div>
+    </main>
+  </div>
+
+  <!-- Template for a category section (categories are the fixed set the storefront's filter pills use) -->
+  <template id="category-template">
+    <section class="category-card">
+      <div class="category-header">
+        <div class="category-header-title">
+          <h2></h2>
+          <span class="category-count"></span>
+        </div>
+        <div class="category-header-actions">
+          <div class="category-reorder-btns">
+            <button class="btn btn-ghost btn-icon move-category-up-btn" title="Move category up" aria-label="Move category up">↑</button>
+            <button class="btn btn-ghost btn-icon move-category-down-btn" title="Move category down" aria-label="Move category down">↓</button>
+          </div>
+          <button class="btn btn-secondary btn-sm add-item-btn">+ Add Product</button>
+          <button class="btn btn-danger-outline btn-sm delete-category-btn">Delete Category</button>
+        </div>
+      </div>
+      <div class="category-delete-confirm hidden">
+        <p class="category-delete-confirm-text">
+          Type <strong>delete</strong> below to confirm removing this category. This only works if it has no products.
+        </p>
+        <div class="category-delete-confirm-row">
+          <input type="text" class="category-delete-confirm-input" placeholder="Type delete to confirm" autocomplete="off">
+          <button class="btn btn-danger btn-sm category-delete-confirm-btn" disabled>Confirm Delete</button>
+          <button class="btn btn-ghost btn-sm category-delete-cancel-btn">Cancel</button>
+        </div>
+      </div>
+      <div class="items-grid"></div>
+    </section>
+  </template>
+
+  <!-- Template for a single product card -->
+  <template id="item-template">
+    <div class="item-card">
+      <div class="item-photo">
+        <img class="item-photo-img" alt="">
+        <label class="photo-upload-label">
+          Change Photo
+          <input type="file" accept="image/*" class="photo-input">
+        </label>
+      </div>
+      <div class="item-fields">
+        <input type="text" class="item-name-input" placeholder="Product name">
+
+        <select class="item-category-select"></select>
+
+        <textarea class="item-desc-input" placeholder="Description (optional)" rows="2"></textarea>
+
+        <div class="item-row item-price-row">
+          <label class="price-label">Rs. <input type="number" class="item-price-input" min="0" step="0.01"></label>
+          <select class="item-badge-type-select">
+            <option value="">No badge</option>
+            <option value="organic">Organic</option>
+            <option value="bestseller">Bestseller</option>
+            <option value="new">New</option>
+            <option value="sale">Sale</option>
+          </select>
+        </div>
+        <input type="text" class="item-badge-input" placeholder="Badge text, e.g. ORGANIC">
+
+        <label class="checkbox-label discount-toggle-label">
+          <input type="checkbox" class="item-discount-input"> 🏷️ Apply a discount (show old price crossed out)
+        </label>
+        <div class="item-row item-discount-row hidden">
+          <label class="price-label discount-price-label">Old Rs. <input type="number" class="item-oldprice-input" min="0" step="0.01"></label>
+        </div>
+
+        <div class="item-row rating-row">
+          <label class="price-label">★ <input type="number" class="item-rating-input" min="0" max="5" step="0.1"></label>
+          <label class="price-label">Reviews <input type="number" class="item-reviews-input" min="0" step="1"></label>
+        </div>
+
+        <input type="text" class="item-unit-input" placeholder="Unit, e.g. 1 kg / Pack">
+      </div>
+      <button class="btn btn-danger btn-sm delete-item-btn">Delete</button>
+    </div>
+  </template>
+
+  <button id="scroll-top-btn" class="scroll-top-btn scroll-top-btn-hidden" title="Scroll to top" aria-label="Scroll to top">↑</button>
+
+  <!-- Crop/fit modal shown before a chosen photo is uploaded -->
+  <div id="crop-modal-overlay" class="crop-modal-overlay hidden">
+    <div class="crop-modal">
+      <div class="crop-modal-header">
+        <h3>Crop &amp; Fit Photo</h3>
+        <button type="button" class="crop-modal-close" aria-label="Cancel">&times;</button>
+      </div>
+      <div class="crop-canvas-wrap">
+        <canvas id="crop-canvas"></canvas>
+      </div>
+      <p class="crop-hint">Drag to reposition, use the slider to zoom. The image will fit the card exactly.</p>
+      <div class="crop-controls">
+        <label class="crop-zoom-label">
+          Zoom
+          <input type="range" id="crop-zoom-range" min="100" max="300" value="100">
+        </label>
+        <span id="crop-size-estimate" class="crop-size-estimate"></span>
+      </div>
+      <div class="crop-modal-actions">
+        <button type="button" class="btn btn-ghost crop-modal-close">Cancel</button>
+        <button type="button" class="btn btn-primary" id="crop-apply-btn">Apply &amp; Upload</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>

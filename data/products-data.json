@@ -1,24 +1,4 @@
-/**
- * Groco Centralized Product Dataset (Loader)
- * Loads the live, admin-edited product catalog from /api/products (backed by
- * Vercel Blob storage). Falls back to a bundled snapshot if the API can't be
- * reached (e.g. the site is served as plain static files without the
- * serverless functions running), so the storefront never breaks.
- *
- * Other scripts on every page (script.js, products.js, products-core.js)
- * read from the GROCO_PRODUCTS array and call getProductById() /
- * getFeaturedProducts() exactly as before - this file just controls how that
- * array gets populated. Page scripts that render products on initial load
- * should `await window.GrocoProductsReady` first; anything that only reacts
- * to user clicks after the page has settled (cart, wishlist, quick view)
- * doesn't need to, since the load finishes well before a user can interact.
- */
-
-const GROCO_PRODUCTS = [];
-
-// Bundled fallback snapshot - kept in sync with data/products-data.json on
-// the server. Only used if /api/products is unreachable.
-const GROCO_PRODUCTS_FALLBACK = [
+[
   {
     "id": "p1",
     "name": "Fresh Red Gala Apples",
@@ -889,36 +869,4 @@ const GROCO_PRODUCTS_FALLBACK = [
     "unit": "454g Resealable Bag",
     "description": "Whole grain, kosher, non-GMO roasted oats and cereal mix perfect for a wholesome breakfast bowl."
   }
-];
-
-function applyProducts(list) {
-  GROCO_PRODUCTS.length = 0;
-  list.forEach((p) => GROCO_PRODUCTS.push(p));
-}
-
-// Kicks off immediately when this script loads. Exposed as a promise so page
-// scripts can wait for the real data before their first render.
-window.GrocoProductsReady = (async function loadProducts() {
-  try {
-    const res = await fetch('/api/products', { cache: 'no-store' });
-    if (!res.ok) throw new Error('Request failed with status ' + res.status);
-    const data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) throw new Error('Empty product list');
-    applyProducts(data);
-  } catch (err) {
-    // No live API (static hosting, offline, Blob not configured yet, etc.)
-    // - fall back to the bundled snapshot so the site still works.
-    applyProducts(GROCO_PRODUCTS_FALLBACK);
-  }
-  document.dispatchEvent(new CustomEvent('groco:products-ready'));
-})();
-
-// Helper Functions
-function getProductById(id) {
-  if (!id) return null;
-  return GROCO_PRODUCTS.find(p => String(p.id).toLowerCase() === String(id).toLowerCase());
-}
-
-function getFeaturedProducts() {
-  return GROCO_PRODUCTS.slice(0, 8);
-}
+]

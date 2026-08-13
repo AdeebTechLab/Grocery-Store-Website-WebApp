@@ -1,0 +1,12 @@
+{
+  "name": "groco-site",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Groco grocery store website with an admin panel for managing the product catalog (Vercel Functions + Vercel Blob storage).",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.5.0"
+  }
+}
