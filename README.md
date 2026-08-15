@@ -52,4 +52,3 @@ Grocery-Store-Website-WebApp-main/
 - 📬 **Newsletter signup** — footer subscribe form (demo only, no backend).
 - 📱 **Responsive design** — mobile navigation menu and responsive layouts across all pages.
 - ✨ **Scroll animations** — fade/slide-in effects as sections enter the viewport on the homepage.
-

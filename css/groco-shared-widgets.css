@@ -295,3 +295,463 @@
     max-width: 100%;
   }
 }
+
+/* --------------------------------------------------------------------------
+   CHECKOUT MODAL (order summary + customer details -> WhatsApp handoff)
+   -------------------------------------------------------------------------- */
+.groco-checkout-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 31, 58, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.groco-checkout-modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.groco-checkout-modal {
+  width: 100%;
+  max-width: 460px;
+  max-height: 88vh;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.96) translateY(10px);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.groco-checkout-modal-overlay.open .groco-checkout-modal {
+  transform: scale(1) translateY(0);
+}
+
+.groco-checkout-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--color-border-light, #e2efe0);
+  flex-shrink: 0;
+}
+
+.groco-checkout-modal-header h2 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--color-text-main, #1c2b1e);
+}
+
+.groco-checkout-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-green-light, #f1f5f0);
+  color: var(--color-text-main, #1c2b1e);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.groco-checkout-close-btn:hover {
+  background: #e2ede0;
+}
+
+.groco-checkout-modal-body {
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+}
+
+.groco-checkout-summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 22px;
+  font-size: 13px;
+}
+
+.groco-checkout-summary-table thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-body, #4a5d4e);
+  padding: 0 0 8px;
+  border-bottom: 1.5px solid var(--color-border-light, #e2efe0);
+}
+
+.groco-checkout-summary-table thead th:not(:first-child) {
+  text-align: right;
+}
+
+.groco-checkout-summary-table tbody td {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-light, #e2efe0);
+  vertical-align: top;
+}
+
+.groco-checkout-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.groco-checkout-summary-name {
+  font-weight: 700;
+  color: var(--color-text-main, #1c2b1e);
+}
+
+.groco-checkout-summary-unit {
+  font-size: 11px;
+  color: var(--color-text-body, #4a5d4e);
+}
+
+.groco-checkout-summary-qty {
+  text-align: right;
+  color: var(--color-text-body, #4a5d4e);
+  white-space: nowrap;
+}
+
+.groco-checkout-summary-price {
+  text-align: right;
+  font-weight: 700;
+  color: var(--color-text-main, #1c2b1e);
+  white-space: nowrap;
+}
+
+.groco-checkout-summary-table tfoot td {
+  padding-top: 12px;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--color-text-main, #1c2b1e);
+}
+
+.groco-checkout-summary-total {
+  text-align: right;
+  color: var(--color-primary-green, #366933);
+}
+
+.groco-checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.groco-checkout-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-main, #1c2b1e);
+}
+
+.groco-checkout-field input,
+.groco-checkout-field textarea {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 11px 14px;
+  border-radius: 10px;
+  border: 1.5px solid var(--color-border-light, #e2efe0);
+  background: #fafcf9;
+  color: var(--color-text-main, #1c2b1e);
+  resize: vertical;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.groco-checkout-field input:focus,
+.groco-checkout-field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-green, #366933);
+  background: #ffffff;
+}
+
+.groco-checkout-field input.field-error,
+.groco-checkout-field textarea.field-error {
+  border-color: #e74c3c;
+}
+
+.groco-checkout-error {
+  display: none;
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #e74c3c;
+}
+
+.groco-checkout-error.show {
+  display: block;
+}
+
+.groco-checkout-submit-btn {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  background: #25D366;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.groco-checkout-submit-btn:hover {
+  background: #1fb959;
+  transform: translateY(-1px);
+}
+
+.groco-checkout-disclaimer {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--color-text-body, #4a5d4e);
+  text-align: center;
+}
+
+@media (max-width: 480px) {
+  .groco-checkout-modal {
+    max-width: 100%;
+    max-height: 92vh;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   WISHLIST DRAWER
+   -------------------------------------------------------------------------- */
+.groco-wishlist-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(11, 31, 58, 0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1100;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.groco-wishlist-drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.groco-wishlist-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  box-shadow: -12px 0 36px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.groco-wishlist-drawer-overlay.open .groco-wishlist-drawer {
+  transform: translateX(0);
+}
+
+.groco-wishlist-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--color-border-light, #e2efe0);
+  flex-shrink: 0;
+}
+
+.groco-wishlist-drawer-header h2 {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--color-text-main, #1c2b1e);
+  margin: 0;
+}
+
+.groco-wishlist-close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-soft-green, #eaf4e5);
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--color-text-main, #1c2b1e);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.groco-wishlist-close-btn:hover {
+  background: #e74c3c;
+  color: #ffffff;
+}
+
+.groco-wishlist-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 24px;
+}
+
+.groco-wishlist-line-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 14px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--color-border-light, #f0f3eb);
+  align-items: center;
+}
+
+.groco-wishlist-item-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--color-bg-light, #f6f8f1);
+}
+
+.groco-wishlist-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.groco-wishlist-item-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-main, #1c2b1e);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.groco-wishlist-item-price {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-primary-green, #366933);
+}
+
+.groco-wishlist-item-unit {
+  font-size: 12px;
+  color: var(--color-text-body, #4a5d4e);
+}
+
+.groco-wishlist-item-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.groco-wishlist-add-cart-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--color-primary-green, #366933);
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.groco-wishlist-add-cart-btn:hover {
+  background: var(--color-primary-hover, #2e5a2c);
+}
+
+.groco-wishlist-add-cart-btn.added {
+  background: var(--color-text-body, #4a5d4e);
+}
+
+.groco-wishlist-remove-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-body, #4a5d4e);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.groco-wishlist-remove-btn:hover {
+  color: #e74c3c;
+}
+
+.groco-wishlist-empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 20px;
+  gap: 6px;
+}
+
+.groco-wishlist-empty-state p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-main, #1c2b1e);
+}
+
+.groco-wishlist-empty-state .groco-wishlist-empty-sub {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-body, #4a5d4e);
+}
+
+.groco-wishlist-drawer-footer {
+  flex-shrink: 0;
+  padding: 20px 24px 24px;
+  border-top: 1px solid var(--color-border-light, #e2efe0);
+}
+
+.groco-wishlist-add-all-btn {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  background: var(--color-primary-green, #366933);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.groco-wishlist-add-all-btn:hover {
+  background: var(--color-primary-hover, #2e5a2c);
+}
+
+@media (max-width: 480px) {
+  .groco-wishlist-drawer {
+    max-width: 100%;
+  }
+}

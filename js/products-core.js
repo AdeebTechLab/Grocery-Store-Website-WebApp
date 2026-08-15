@@ -117,6 +117,18 @@ const GrocoStore = {
     });
   },
 
+  updateWishlistBadges() {
+    const count = this.getWishlist().length;
+    const badges = document.querySelectorAll('#wishlist-badge, .wishlist-count-badge');
+    badges.forEach(b => {
+      b.textContent = count;
+      b.style.transform = 'scale(1.4)';
+      setTimeout(() => {
+        b.style.transform = 'scale(1)';
+      }, 250);
+    });
+  },
+
   // Wishlist Methods
   getWishlist() {
     try {
@@ -130,6 +142,11 @@ const GrocoStore = {
     let cart = this.getCart();
     cart = cart.filter(item => item.id !== productId);
     localStorage.setItem('groco_cart', JSON.stringify(cart));
+    this.updateCartBadges();
+  },
+
+  clearCart() {
+    localStorage.setItem('groco_cart', JSON.stringify([]));
     this.updateCartBadges();
   },
 
@@ -168,6 +185,7 @@ const GrocoStore = {
     }
 
     localStorage.setItem('groco_wishlist', JSON.stringify(wishlist));
+    this.updateWishlistBadges();
 
     // Update heart icons in DOM
     const heartBtns = document.querySelectorAll(`.wishlist-btn[data-id="${productId}"], .catalog-wishlist-btn[data-id="${productId}"]`);
@@ -437,7 +455,8 @@ const GrocoCartDrawer = {
         GrocoStore.removeFromCart(id);
         this.render();
       } else if (checkoutBtn) {
-        GrocoToast.show('🛒 Checkout is not available in this demo store — no payment backend is connected.');
+        this.close();
+        GrocoCheckoutModal.open();
       }
     });
   },
@@ -513,6 +532,356 @@ const GrocoCartDrawer = {
   }
 };
 
+// --------------------------------------------------------------------------
+// 4B. CHECKOUT MODAL — collects customer details, shows an order summary
+//     table built from the live cart, and sends the whole order as a single
+//     prewritten message to the store's WhatsApp number. There is no
+//     payment backend here: WhatsApp is where the order actually gets
+//     confirmed with the shopper.
+// --------------------------------------------------------------------------
+const GROCO_ORDER_WHATSAPP_NUMBER = '+92 309 2333121';
+
+const GrocoCheckoutModal = {
+  overlay: null,
+
+  init() {
+    if (this.overlay) return;
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'groco-checkout-modal-overlay';
+    this.overlay.innerHTML = `
+      <div class="groco-checkout-modal" role="dialog" aria-label="Checkout">
+        <div class="groco-checkout-modal-header">
+          <h2>Checkout</h2>
+          <button class="groco-checkout-close-btn" aria-label="Close Checkout">&times;</button>
+        </div>
+        <div class="groco-checkout-modal-body">
+          <div id="groco-checkout-summary"></div>
+
+          <form class="groco-checkout-form" id="groco-checkout-form" novalidate>
+            <label class="groco-checkout-field">
+              <span>Full Name *</span>
+              <input type="text" id="checkout-name" autocomplete="name" required>
+            </label>
+            <label class="groco-checkout-field">
+              <span>Phone Number *</span>
+              <input type="tel" id="checkout-phone" autocomplete="tel" required>
+            </label>
+            <label class="groco-checkout-field">
+              <span>Delivery Address *</span>
+              <textarea id="checkout-address" rows="2" autocomplete="street-address" required></textarea>
+            </label>
+            <label class="groco-checkout-field">
+              <span>City</span>
+              <input type="text" id="checkout-city" autocomplete="address-level2">
+            </label>
+            <label class="groco-checkout-field">
+              <span>Order Notes (optional)</span>
+              <textarea id="checkout-notes" rows="2" placeholder="Preferred delivery time, substitutions, etc."></textarea>
+            </label>
+            <p class="groco-checkout-error" id="groco-checkout-error"></p>
+            <button type="submit" class="groco-checkout-submit-btn">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.372-.025-.521-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.71.306 1.263.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"></path>
+                <path d="M12.004 2.003c-5.514 0-9.997 4.483-9.997 9.997 0 1.762.462 3.482 1.34 4.997L2 22l5.116-1.341a9.96 9.96 0 0 0 4.888 1.243h.004c5.514 0 9.997-4.483 9.997-9.997 0-2.67-1.04-5.182-2.929-7.07a9.933 9.933 0 0 0-7.072-2.832zm.001 18.174h-.003a8.183 8.183 0 0 1-4.166-1.14l-.299-.177-3.037.797.81-2.96-.194-.304a8.166 8.166 0 0 1-1.256-4.393c0-4.515 3.673-8.188 8.191-8.188a8.13 8.13 0 0 1 5.792 2.401 8.132 8.132 0 0 1 2.397 5.792c0 4.516-3.674 8.172-8.235 8.172z"></path>
+              </svg>
+              <span>Send Order via WhatsApp</span>
+            </button>
+            <p class="groco-checkout-disclaimer">You'll be taken to WhatsApp with your order pre-filled — confirm it there with our team. No payment is collected on this site.</p>
+          </form>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(this.overlay);
+
+    this.overlay.addEventListener('click', (e) => {
+      if (e.target === this.overlay || e.target.classList.contains('groco-checkout-close-btn')) {
+        this.close();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.overlay.classList.contains('open')) {
+        this.close();
+      }
+    });
+
+    // Pre-fill from the last order so a returning shopper doesn't have to
+    // retype their details. Purely a local convenience - never sent
+    // anywhere until they submit this form themselves.
+    try {
+      const saved = JSON.parse(localStorage.getItem('groco_checkout_customer') || 'null');
+      if (saved) {
+        this.overlay.querySelector('#checkout-name').value = saved.name || '';
+        this.overlay.querySelector('#checkout-phone').value = saved.phone || '';
+        this.overlay.querySelector('#checkout-address').value = saved.address || '';
+        this.overlay.querySelector('#checkout-city').value = saved.city || '';
+      }
+    } catch {}
+
+    this.overlay.querySelector('#groco-checkout-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.submit();
+    });
+  },
+
+  // Renders the read-only order summary table from the live cart.
+  renderSummary() {
+    const summaryEl = this.overlay.querySelector('#groco-checkout-summary');
+    const cart = GrocoStore.getCart();
+
+    const rows = cart.map((item) => {
+      const product = typeof getProductById === 'function' ? getProductById(item.id) : null;
+      if (!product) return '';
+      const qty = item.quantity || 1;
+      const lineTotal = (product.price * qty).toFixed(2);
+      const name = escapeHTML(product.name);
+      const unit = escapeHTML(product.unit);
+      return `
+        <tr>
+          <td>
+            <div class="groco-checkout-summary-item">
+              <span class="groco-checkout-summary-name">${name}</span>
+              <span class="groco-checkout-summary-unit">${unit}</span>
+            </div>
+          </td>
+          <td class="groco-checkout-summary-qty">x${qty}</td>
+          <td class="groco-checkout-summary-price">$${lineTotal}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const total = GrocoStore.getCartTotal().toFixed(2);
+
+    summaryEl.innerHTML = `
+      <table class="groco-checkout-summary-table">
+        <thead>
+          <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr><td colspan="2">Subtotal</td><td class="groco-checkout-summary-total">$${total}</td></tr>
+        </tfoot>
+      </table>
+    `;
+  },
+
+  // Validates the form, builds the prewritten WhatsApp message from the
+  // customer details + itemized cart, and opens it in a new tab.
+  submit() {
+    const cart = GrocoStore.getCart();
+    if (cart.length === 0) {
+      GrocoToast.show('Your cart is empty — add something before checking out.');
+      this.close();
+      return;
+    }
+
+    const nameInput = this.overlay.querySelector('#checkout-name');
+    const phoneInput = this.overlay.querySelector('#checkout-phone');
+    const addressInput = this.overlay.querySelector('#checkout-address');
+    const cityInput = this.overlay.querySelector('#checkout-city');
+    const notesInput = this.overlay.querySelector('#checkout-notes');
+    const errorEl = this.overlay.querySelector('#groco-checkout-error');
+
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const address = addressInput.value.trim();
+    const city = cityInput.value.trim();
+    const notes = notesInput.value.trim();
+
+    [nameInput, phoneInput, addressInput].forEach((input) => input.classList.remove('field-error'));
+
+    if (!name || !phone || !address) {
+      errorEl.textContent = 'Please fill in your name, phone number, and delivery address.';
+      errorEl.classList.add('show');
+      [nameInput, phoneInput, addressInput].forEach((input) => {
+        if (!input.value.trim()) input.classList.add('field-error');
+      });
+      return;
+    }
+    errorEl.classList.remove('show');
+
+    try {
+      localStorage.setItem('groco_checkout_customer', JSON.stringify({ name, phone, address, city }));
+    } catch {}
+
+    const lines = cart.map((item, idx) => {
+      const product = typeof getProductById === 'function' ? getProductById(item.id) : null;
+      if (!product) return '';
+      const qty = item.quantity || 1;
+      const lineTotal = (product.price * qty).toFixed(2);
+      return `${idx + 1}. ${product.name} x${qty} — $${lineTotal}`;
+    }).filter(Boolean).join('\n');
+
+    const total = GrocoStore.getCartTotal().toFixed(2);
+
+    const messageLines = [
+      '🛒 *New Order — Groco*',
+      '',
+      '*Customer Details*',
+      `Name: ${name}`,
+      `Phone: ${phone}`,
+      `Address: ${address}${city ? ', ' + city : ''}`,
+    ];
+    if (notes) messageLines.push(`Notes: ${notes}`);
+    messageLines.push('', '*Order Items*', lines, '', `*Subtotal: $${total}*`, '', 'Sent from the Groco website.');
+
+    const message = messageLines.join('\n');
+    const cleanNumber = GROCO_ORDER_WHATSAPP_NUMBER.replace(/[^0-9]/g, '');
+    const whatsappUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(message)}`;
+
+    window.open(whatsappUrl, '_blank', 'noopener');
+
+    GrocoToast.show('✅ Order sent! Confirm the details with us on WhatsApp.');
+    GrocoStore.clearCart();
+    this.close();
+  },
+
+  open() {
+    const cart = GrocoStore.getCart();
+    if (cart.length === 0) {
+      GrocoToast.show('Your cart is empty — add something before checking out.');
+      return;
+    }
+    this.init();
+    this.renderSummary();
+    const errorEl = this.overlay.querySelector('#groco-checkout-error');
+    if (errorEl) errorEl.classList.remove('show');
+    this.overlay.querySelectorAll('.field-error').forEach((el) => el.classList.remove('field-error'));
+    this.overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    if (this.overlay) {
+      this.overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+};
+
+// --------------------------------------------------------------------------
+// 5. WISHLIST DRAWER (slide-in panel showing saved items, opened from the
+//    heart/wishlist icon on product cards or the header wishlist icon)
+// --------------------------------------------------------------------------
+const GrocoWishlistDrawer = {
+  overlay: null,
+
+  init() {
+    if (this.overlay) return;
+    this.overlay = document.createElement('div');
+    this.overlay.className = 'groco-wishlist-drawer-overlay';
+    this.overlay.innerHTML = `
+      <aside class="groco-wishlist-drawer" role="dialog" aria-label="Wishlist">
+        <div class="groco-wishlist-drawer-header">
+          <h2>Your Wishlist</h2>
+          <button class="groco-wishlist-close-btn" aria-label="Close Wishlist">&times;</button>
+        </div>
+        <div class="groco-wishlist-drawer-body" id="groco-wishlist-drawer-body"></div>
+        <div class="groco-wishlist-drawer-footer" id="groco-wishlist-drawer-footer"></div>
+      </aside>
+    `;
+    document.body.appendChild(this.overlay);
+
+    this.overlay.addEventListener('click', (e) => {
+      if (e.target === this.overlay || e.target.classList.contains('groco-wishlist-close-btn')) {
+        this.close();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.overlay.classList.contains('open')) {
+        this.close();
+      }
+    });
+
+    // Delegated handlers for add-to-cart / remove / add-all buttons inside the drawer
+    this.overlay.addEventListener('click', (e) => {
+      const addCartBtn = e.target.closest('.groco-wishlist-add-cart-btn');
+      const removeBtn = e.target.closest('.groco-wishlist-remove-btn');
+      const addAllBtn = e.target.closest('.groco-wishlist-add-all-btn');
+
+      if (addCartBtn) {
+        const id = addCartBtn.getAttribute('data-id');
+        const img = this.overlay.querySelector(`.groco-wishlist-line-item[data-id="${id}"] img`);
+        GrocoStore.addToCart(id, 1, img);
+        addCartBtn.textContent = 'Added ✓';
+        addCartBtn.classList.add('added');
+        setTimeout(() => {
+          addCartBtn.textContent = 'Add to Cart';
+          addCartBtn.classList.remove('added');
+        }, 1200);
+      } else if (removeBtn) {
+        const id = removeBtn.getAttribute('data-id');
+        GrocoStore.toggleWishlist(id);
+        this.render();
+      } else if (addAllBtn) {
+        const wishlist = GrocoStore.getWishlist();
+        wishlist.forEach((id) => GrocoStore.addToCart(id, 1));
+        GrocoToast.show('🛍️ Added every wishlist item to your cart!');
+      }
+    });
+  },
+
+  render() {
+    const body = document.getElementById('groco-wishlist-drawer-body');
+    const footer = document.getElementById('groco-wishlist-drawer-footer');
+    if (!body || !footer) return;
+
+    const wishlist = GrocoStore.getWishlist();
+
+    if (wishlist.length === 0) {
+      body.innerHTML = `
+        <div class="groco-wishlist-empty-state">
+          <p>Your wishlist is empty 💚</p>
+          <p class="groco-wishlist-empty-sub">Tap the heart on any product to save it for later!</p>
+        </div>
+      `;
+      footer.innerHTML = '';
+      return;
+    }
+
+    body.innerHTML = wishlist.map((id) => {
+      const product = typeof getProductById === 'function' ? getProductById(id) : null;
+      if (!product) return '';
+      const name = escapeHTML(product.name);
+      const image = escapeHTML(product.image);
+      const unit = escapeHTML(product.unit);
+      return `
+        <div class="groco-wishlist-line-item" data-id="${product.id}">
+          <img src="${image}" alt="${name}" class="groco-wishlist-item-img">
+          <div class="groco-wishlist-item-info">
+            <span class="groco-wishlist-item-name">${name}</span>
+            <span class="groco-wishlist-item-price">$${product.price.toFixed(2)}</span>
+            <span class="groco-wishlist-item-unit">${unit}</span>
+          </div>
+          <div class="groco-wishlist-item-actions">
+            <button class="groco-wishlist-add-cart-btn" data-id="${product.id}">Add to Cart</button>
+            <button class="groco-wishlist-remove-btn" data-id="${product.id}" aria-label="Remove from wishlist">Remove</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    footer.innerHTML = `
+      <button class="groco-wishlist-add-all-btn">Add All to Cart</button>
+    `;
+  },
+
+  open() {
+    this.init();
+    this.render();
+    this.overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  },
+
+  close() {
+    if (this.overlay) {
+      this.overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  }
+};
+
 // Wire up every "cart-btn" (button, anchor, or div wrapper) across all pages
 // to open the shared cart drawer instead of doing nothing / navigating to a dead anchor.
 document.addEventListener('click', (e) => {
@@ -520,6 +889,15 @@ document.addEventListener('click', (e) => {
   if (!trigger) return;
   e.preventDefault();
   GrocoCartDrawer.open();
+});
+
+// Wire up the header wishlist icon (present on every page) to open the
+// wishlist drawer.
+document.addEventListener('click', (e) => {
+  const trigger = e.target.closest('#wishlist-drawer-btn, .wishlist-header-btn');
+  if (!trigger) return;
+  e.preventDefault();
+  GrocoWishlistDrawer.open();
 });
 
 // Global Delegated Event Handler for Product Card Actions Across All Components
@@ -554,7 +932,14 @@ document.addEventListener('click', (e) => {
   if (wishBtn) {
     e.stopPropagation();
     const productId = wishBtn.getAttribute('data-id');
-    GrocoStore.toggleWishlist(productId);
+    const added = GrocoStore.toggleWishlist(productId);
+    if (added) {
+      // Show the wishlist right away so the shopper can see what's saved
+      // and, if they want, send it straight to their cart.
+      GrocoWishlistDrawer.open();
+    } else if (GrocoWishlistDrawer.overlay && GrocoWishlistDrawer.overlay.classList.contains('open')) {
+      GrocoWishlistDrawer.render();
+    }
     return;
   }
 
@@ -577,9 +962,10 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// Initialize Cart Badge Count on DOM Load
+// Initialize Cart & Wishlist Badge Counts on DOM Load
 document.addEventListener('DOMContentLoaded', () => {
   GrocoStore.updateCartBadges();
+  GrocoStore.updateWishlistBadges();
 });
 
 // ==========================================================================

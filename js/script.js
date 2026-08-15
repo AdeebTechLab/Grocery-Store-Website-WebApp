@@ -23,6 +23,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     mobileToggle.addEventListener('click', () => {
       navMenu.classList.toggle('active');
       mobileToggle.classList.toggle('active');
+      document.body.classList.toggle('nav-menu-open', navMenu.classList.contains('active'));
+    });
+
+    // Close on outside click/tap.
+    document.addEventListener('click', (e) => {
+      if (!navMenu.classList.contains('active')) return;
+      if (navMenu.contains(e.target) || mobileToggle.contains(e.target)) return;
+      navMenu.classList.remove('active');
+      mobileToggle.classList.remove('active');
+      document.body.classList.remove('nav-menu-open');
+    });
+
+    // Close on Escape.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+        navMenu.classList.remove('active');
+        mobileToggle.classList.remove('active');
+        document.body.classList.remove('nav-menu-open');
+      }
     });
   }
 
@@ -30,17 +49,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   // globally by GrocoCartDrawer / GrocoStore in products-core.js, which reflects
   // the *real* localStorage cart contents instead of a fake per-click counter.
 
-  // Subtle Interactive Feedback on Search & User Buttons
-  [searchBtn, userBtn].forEach(btn => {
-    if (btn) {
-      btn.addEventListener('click', () => {
-        btn.style.transform = 'scale(0.92)';
-        setTimeout(() => {
-          btn.style.transform = '';
-        }, 150);
-      });
-    }
-  });
+  // Subtle Interactive Feedback on User Button
+  if (userBtn) {
+    userBtn.addEventListener('click', () => {
+      userBtn.style.transform = 'scale(0.92)';
+      setTimeout(() => {
+        userBtn.style.transform = '';
+      }, 150);
+    });
+  }
+
+  // Header Search Icon — takes the shopper to the real, working search box
+  // on the product catalog page (same pattern already used by the search
+  // icon in the header on products.html / journal.html / article.html).
+  if (searchBtn) {
+    searchBtn.addEventListener('click', () => {
+      searchBtn.style.transform = 'scale(0.92)';
+      setTimeout(() => {
+        window.location.href = 'products.html';
+      }, 120);
+    });
+  }
 
   // Staggered Entrance Animations for Why Choose Us Benefit Pills
   const benefitPills = document.querySelectorAll('.benefit-pill');
@@ -86,6 +115,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const stageProdDesc = document.getElementById('stage-prod-desc');
   const stageAddCartBtn = document.getElementById('stage-add-cart-btn');
   const stageQuickviewBtn = document.getElementById('stage-quickview-btn');
+  const stageWishlistBtn = document.getElementById('stage-wishlist-btn');
   const centerFeaturedImg = document.getElementById('center-featured-img');
   const satellitesContainer = document.getElementById('satellites-container');
   const stagePrevBtn = document.getElementById('stage-prev');
@@ -140,6 +170,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (stageProdDesc) {
         stageProdDesc.textContent = p.description || "Handpicked organic favorites delivered peak-fresh to your kitchen everyday.";
+      }
+
+      // Sync the wishlist heart button to whichever product is now featured,
+      // since the same button represents a different product as the stage
+      // auto-rotates or the shopper navigates it manually.
+      if (stageWishlistBtn && p.id) {
+        stageWishlistBtn.setAttribute('data-id', p.id);
+        const isWishlisted = typeof GrocoStore !== 'undefined' && GrocoStore.getWishlist().includes(p.id);
+        stageWishlistBtn.classList.toggle('active', isWishlisted);
+        const wishSvg = stageWishlistBtn.querySelector('svg');
+        if (wishSvg) {
+          wishSvg.setAttribute('fill', isWishlisted ? '#e74c3c' : 'none');
+          wishSvg.setAttribute('stroke', isWishlisted ? '#e74c3c' : 'currentColor');
+        }
       }
 
       if (centerFeaturedImg) {
@@ -285,7 +329,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         GrocoStore.addToCart(activeProd.id, 1, centerFeaturedImg);
       } else if (typeof GrocoToast !== 'undefined') {
         // Extremely unlikely fallback if products-core.js failed to load
-        GrocoToast.show(`Fresh <strong>${activeProd.name}</strong> added to cart! 🛍️`);
+        GrocoToast.show(`Fresh <strong>${escapeHTML(activeProd.name)}</strong> added to cart! 🛍️`);
       }
 
       // Button compression feedback animation
@@ -569,6 +613,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (navMenu && navMenu.classList.contains('active')) {
             navMenu.classList.remove('active');
             if (mobileToggle) mobileToggle.classList.remove('active');
+            document.body.classList.remove('nav-menu-open');
           }
 
           if (clickTimeout) clearTimeout(clickTimeout);
@@ -965,7 +1010,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Trigger Motion System Init
   initGrocoScrollMotionSystem();
 
-  console.log('Groco Website fully initialized with Global Scroll Motion System.');
 });
 
 

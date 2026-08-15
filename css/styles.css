@@ -53,6 +53,8 @@ html {
   font-size: 16px;
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 body {
@@ -61,6 +63,7 @@ body {
   color: var(--color-text-main);
   line-height: 1.5;
   overflow-x: hidden;
+  width: 100%;
   min-height: 100vh;
 }
 
@@ -204,6 +207,10 @@ body {
 
 /* Cart Badge */
 .cart-btn {
+  position: relative;
+}
+
+.wishlist-header-btn {
   position: relative;
 }
 
@@ -1274,6 +1281,33 @@ body {
 
 .stage-quickview-btn:hover {
   background: var(--color-green-light);
+  transform: scale(1.08);
+}
+
+/* Featured Stage Wishlist Button — overrides the absolute-positioned
+   card-corner .wishlist-btn base rule so it sits inline in .info-actions
+   next to Add to Cart / Quick View, matching .stage-quickview-btn's size. */
+.stage-wishlist-btn.wishlist-btn {
+  position: static;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #F1F5F0;
+  border: 1.5px solid #D4E6D2;
+  color: var(--color-primary-green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: none;
+  transition: all 0.3s ease;
+}
+
+.stage-wishlist-btn.wishlist-btn:hover,
+.stage-wishlist-btn.wishlist-btn.active {
+  background: #ffffff;
+  color: #e74c3c;
+  border-color: #f1948a;
   transform: scale(1.08);
 }
 
@@ -3536,6 +3570,42 @@ body {
 
   .mobile-toggle {
     display: flex;
+    flex-shrink: 0;
+  }
+
+  /* The row of icons (search, wishlist, cart, profile, hamburger) is too
+     wide to fit next to the logo on narrow phones, which was pushing the
+     hamburger button off the right edge of the screen — invisible, but
+     still there, which is also what made the page feel horizontally
+     draggable. Tighten things up and drop the purely decorative profile
+     icon so everything fits and nothing overflows. */
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+
+  #user-btn {
+    display: none;
+  }
+
+  .mobile-toggle.active span:nth-child(1) {
+    transform: translateY(9.5px) rotate(45deg);
+  }
+
+  .mobile-toggle.active span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .mobile-toggle.active span:nth-child(3) {
+    transform: translateY(-9.5px) rotate(-45deg);
+  }
+
+  body.nav-menu-open {
+    overflow: hidden;
   }
 
   .hero-title {
